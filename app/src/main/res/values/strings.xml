@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MediaRecorder</string>
+    <string name="initTimeString">00:00</string>
+</resources>
