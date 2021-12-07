@@ -10,17 +10,22 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
+    private val soundVisualizeView:SoundVisualizeView by lazy{
+        findViewById(R.id.visualizeView)
+    }
     private var recorder: MediaRecorder? = null
     private val fileName: String by lazy {
         "${externalCacheDir?.absolutePath}/recording.3gp"
     }
     private var player: MediaPlayer? = null
-
     private val recordButton:RecordButton by lazy {
         findViewById(R.id.recordButton)
     }
     private val resetButton: Button by lazy{
         findViewById(R.id.resetButton)
+    }
+    private val recordTImeTextView: CountUpView by lazy{
+        findViewById(R.id.recordTextView)
     }
     private var state = State.BEFORE_RECODING
         set(value){
@@ -69,8 +74,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindViews(){
+        soundVisualizeView.onRequestCurrentAmplitude = {
+            recorder?.maxAmplitude  ?: 0
+        }
         resetButton.setOnClickListener {
             stopPlaying()
+            soundVisualizeView.clearVisualization()
+            recordTImeTextView.clearCountTime()
             state = State.BEFORE_RECODING
         }
         recordButton.setOnClickListener{
@@ -93,6 +103,8 @@ class MainActivity : AppCompatActivity() {
             prepare()
         }
         recorder?.start()
+        soundVisualizeView.startVisualizing(false)
+        recordTImeTextView.startCountUp()
         state = State.ON_RECODING
     }
 
@@ -102,6 +114,8 @@ class MainActivity : AppCompatActivity() {
             release()
         }
         recorder = null
+        soundVisualizeView.stopVisualizing()
+        recordTImeTextView.stopCountUp()
         state = State.AFTER_RECODING
     }
 
@@ -110,12 +124,20 @@ class MainActivity : AppCompatActivity() {
             setDataSource(fileName)
             prepare()//파일이 커지면 비동기로 어싱크 프리페어를 사용해서 ui 작업을 해줄필요가 있음.
         }
+        player?.setOnCompletionListener {
+            stopPlaying()
+            state = State.BEFORE_RECODING
+        }
         player?.start()
+        soundVisualizeView.startVisualizing(true)
+        recordTImeTextView.startCountUp()
         state = State.ON_PLAYING
     }
     private fun stopPlaying(){
         player?.release() //스탑이 불림
         player = null
+        soundVisualizeView.stopVisualizing()
+        recordTImeTextView.stopCountUp()
         state = State.AFTER_RECODING
     }
     companion object {
